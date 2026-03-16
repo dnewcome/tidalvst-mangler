@@ -1,0 +1,53 @@
+-- start.tidal
+-- Evaluate the two lines below first (Ctrl+Enter on each) to connect to SuperCollider:
+-- :set -XOverloadedStrings
+-- import Sound.Tidal.Context
+
+-- Then start the Tidal listener:
+-- tidal <- startTidal (superdirtTarget {oLatency = 0.1}) (defaultConfig {cVerbose = True})
+
+-- Alias for convenience
+-- let p = streamReplace tidal
+
+-- ============================================================
+-- Basic drums (built-in SuperDirt samples)
+-- ============================================================
+
+d1 $ s "bd sd bd sd"
+
+d1 $ s "bd*2 ~ sd ~" # gain 0.9
+
+-- ============================================================
+-- Playing your VST instrument via TidalVST
+-- The "myvst" name matches what you registered in boot.scd
+-- ============================================================
+
+-- Trigger notes on the VST:
+d2 $ note "0 3 7 10" # s "myvst" # sustain 0.4
+
+-- Minor arpeggio:
+d2 $ note (scale "minor" "0 2 4 6") # s "myvst" # sustain 0.3 # gain 0.8
+
+-- Slow chord stabs:
+d2 $ every 4 (fast 2) $
+    note "[0,4,7] ~ [5,9,12] ~" # s "myvst" # sustain 1.2
+
+-- ============================================================
+-- VST parameter control from Tidal
+-- Parameters are addressed by index (check your plugin's param list)
+-- ============================================================
+
+-- Automate param 0 (e.g. filter cutoff) with a sine wave:
+d3 $ s "myvst" # note "0" # vparam 0 (range 0 1 sine)
+
+-- Step-sequence a parameter:
+d3 $ s "myvst" # note "0" # vparam 0 "0.2 0.5 0.8 1.0"
+
+-- ============================================================
+-- Silence / stop
+-- ============================================================
+
+-- d1 silence
+-- d2 silence
+-- d3 silence
+-- hush   -- silences everything

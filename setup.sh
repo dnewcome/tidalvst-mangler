@@ -25,16 +25,53 @@ else
     cabal install tidal --lib
 fi
 
-echo "==> Installing VSTPlugin SC extension..."
-VSTPLUGIN_VERSION="0.6.2"
-VSTPLUGIN_ARCHIVE="VSTPlugin-linux-x86_64-${VSTPLUGIN_VERSION}.zip"
-VSTPLUGIN_URL="https://github.com/Spacechild1/vstplugin/releases/download/v${VSTPLUGIN_VERSION}/${VSTPLUGIN_ARCHIVE}"
+echo "==> Installing Surge XT..."
+SURGE_DEB_URL="https://github.com/surge-synthesizer/releases-xt/releases/download/1.3.4/surge-xt-linux-x64-1.3.4.deb"
+curl -L "$SURGE_DEB_URL" -o /tmp/surge-xt.deb
+sudo dpkg -i /tmp/surge-xt.deb
+rm /tmp/surge-xt.deb
+
+echo "==> Installing VSTPlugin build dependencies..."
+sudo apt install -y cmake git libx11-dev supercollider-dev
+
 SC_EXT_DIR="$HOME/.local/share/SuperCollider/Extensions"
+SC_INCLUDE_DIR="/usr/include/SuperCollider"
+
+# Find SC headers — location varies by distro
+if [ ! -d "$SC_INCLUDE_DIR" ]; then
+    SC_INCLUDE_DIR="$(dpkg -L supercollider-dev 2>/dev/null | grep -m1 'include/SuperCollider$' || echo '')"
+fi
+if [ -z "$SC_INCLUDE_DIR" ] || [ ! -d "$SC_INCLUDE_DIR" ]; then
+    SC_INCLUDE_DIR="$(find /usr -name 'SCPlugin.h' 2>/dev/null | head -1 | xargs dirname | xargs dirname || echo '')"
+fi
+echo "Using SC headers at: $SC_INCLUDE_DIR"
+
+echo "==> Building VSTPlugin from source..."
+VSTPLUGIN_VERSION="0.6.2"
+BUILD_DIR="/tmp/vstplugin-build"
 
 mkdir -p "$SC_EXT_DIR"
-curl -L "$VSTPLUGIN_URL" -o "/tmp/${VSTPLUGIN_ARCHIVE}"
-unzip -o "/tmp/${VSTPLUGIN_ARCHIVE}" -d "$SC_EXT_DIR"
-rm "/tmp/${VSTPLUGIN_ARCHIVE}"
+rm -rf "$BUILD_DIR"
+git clone --depth 1 --branch "v${VSTPLUGIN_VERSION}" \
+    https://github.com/Spacechild1/vstplugin.git "$BUILD_DIR"
+
+echo "==> Fetching VST3 SDK..."
+git clone --depth 1 --recurse-submodules \
+    https://github.com/steinbergmedia/vst3sdk.git \
+    "$BUILD_DIR/vst/VST_SDK/VST3_SDK"
+
+mkdir -p "$BUILD_DIR/build"
+cmake -S "$BUILD_DIR" -B "$BUILD_DIR/build" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DSC_INCLUDEDIR="$SC_INCLUDE_DIR" \
+    -DSC_INSTALLDIR="$SC_EXT_DIR" \
+    -DPD=OFF \
+    -DVST2=OFF \
+    -DSUPERNOVA=OFF
+cmake --build "$BUILD_DIR/build" -j"$(nproc)"
+cmake --build "$BUILD_DIR/build" -t install
+
+rm -rf "$BUILD_DIR"
 echo "VSTPlugin installed to $SC_EXT_DIR"
 
 echo ""

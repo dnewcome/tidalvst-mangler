@@ -1,16 +1,9 @@
 -- start.tidal
--- Evaluate the two lines below first (Ctrl+Enter on each) to connect to SuperCollider:
--- :set -XOverloadedStrings
--- import Sound.Tidal.Context
-
--- Then start the Tidal listener:
--- tidal <- startTidal (superdirtTarget {oLatency = 0.1}) (defaultConfig {cVerbose = True})
-
--- Alias for convenience
--- let p = streamReplace tidal
+-- Make sure boot.scd is running in SuperCollider first.
+-- Point your editor at BootTidal.hs in this directory.
 
 -- ============================================================
--- Basic drums (built-in SuperDirt samples)
+-- Basic drums (SuperDirt samples)
 -- ============================================================
 
 d1 $ s "bd sd bd sd"
@@ -18,36 +11,47 @@ d1 $ s "bd sd bd sd"
 d1 $ s "bd*2 ~ sd ~" # gain 0.9
 
 -- ============================================================
--- Playing your VST instrument via TidalVST
--- The "myvst" name matches what you registered in boot.scd
+-- VST instrument ("vst" matches the name registered in boot.scd)
 -- ============================================================
 
--- Trigger notes on the VST:
-d2 $ note "0 3 7 10" # s "myvst" # sustain 0.4
+-- Simple melody
+d2 $ n "0 3 7 5" # s "surge" # sustain 0.4
 
--- Minor arpeggio:
-d2 $ note (scale "minor" "0 2 4 6") # s "myvst" # sustain 0.3 # gain 0.8
+-- Scale-mapped notes
+d2 $ n (scale "minor" "0 2 4 6") # s "surge" # sustain 0.3
 
--- Slow chord stabs:
-d2 $ every 4 (fast 2) $
-    note "[0,4,7] ~ [5,9,12] ~" # s "myvst" # sustain 1.2
+-- Chord stabs
+d2 $ n "[0,4,7] ~ [5,9,12] ~" # s "surge" # sustain 1.2 # gain 0.8
 
--- ============================================================
--- VST parameter control from Tidal
--- Parameters are addressed by index (check your plugin's param list)
--- ============================================================
-
--- Automate param 0 (e.g. filter cutoff) with a sine wave:
-d3 $ s "myvst" # note "0" # vparam 0 (range 0 1 sine)
-
--- Step-sequence a parameter:
-d3 $ s "myvst" # note "0" # vparam 0 "0.2 0.5 0.8 1.0"
+-- Euclidean rhythm pattern
+d2 $ n (scale "dorian" (struct "t(3,8)" "0 4 7")) # s "surge" # sustain 0.2
 
 -- ============================================================
--- Silence / stop
+-- VST parameter control
+-- Parameters are addressed by index (varg1 = param 0, etc.)
+-- Check your plugin's param list in SuperCollider:
+--   ~tidalVST.getController(\vst).info.parameters.do {|p,i| (i++": "++p.name).postln}
+-- ============================================================
+
+-- Automate a parameter with a pattern:
+d2 $ n "0 3 7" # s "surge" # varg1 "0.2 0.5 0.8 1.0"
+
+-- Slow sine sweep on a parameter:
+d2 $ n "0" # s "surge" # legato 4
+   # varg1 (slow 4 $ range 0.1 0.9 sine)
+
+-- Layer drums + VST with different parameters each cycle:
+do
+  d1 $ s "bd*2 ~ sd ~"
+  d2 $ every 4 (fast 2) $
+       n (scale "minor" "0 2 ~ 4 ~ 7") # s "surge"
+       # sustain 0.4
+       # varg1 (slow 2 $ range 0 1 tri)
+
+-- ============================================================
+-- Silence
 -- ============================================================
 
 -- d1 silence
 -- d2 silence
--- d3 silence
--- hush   -- silences everything
+-- hush

@@ -1,16 +1,17 @@
-// boot.scd — SuperCollider startup file for TidalCycles + VSTPlugin
-// Evaluate this whole file with Ctrl+Shift+Enter, or block by block with Ctrl+Enter
+// boot.scd — SuperCollider startup for TidalCycles + Surge XT via TidalVST
+// Evaluate each block with Ctrl+Enter (cursor inside the parentheses)
 
-// --- 1. Install Quarks (run once, then comment out) ---
+// --- 1. Install Quarks (run once, then skip) ---
 (
 Quarks.checkForUpdates({
     Quarks.install("SuperDirt", "v1.7.3");
+    Quarks.install("Vowel");
     Quarks.install("https://github.com/thgrund/TidalVST");
     thisProcess.recompile();
 });
 )
 
-// --- 2. Boot the audio server ---
+// --- 2. Boot server + SuperDirt ---
 (
 s.options.numBuffers = 1024 * 256;
 s.options.memSize = 8192 * 32;
@@ -24,47 +25,105 @@ s.waitForBoot {
     ~dirt = SuperDirt(2, s);
     ~dirt.loadSoundFiles;
     ~dirt.start(57120, 0 ! 12);
-
-    // --- 3. Load a VST instrument ---
-    // Replace the path below with your actual VST3 plugin path.
-    // Common locations on Linux:
-    //   ~/.vst3/                  (user installs)
-    //   /usr/lib/vst3/            (system installs)
-    //   /usr/local/lib/vst3/
-    //
-    // To list available plugins, run: VSTPlugin.search(s)
-
     s.sync;
-
-    ~vst_synth = {VSTPlugin.ar(nil, 2)}.play;
-    ~vst_ctrl = VSTPluginController(~vst_synth);
-
-    ~vst_ctrl.open("/path/to/your/plugin.vst3", action: { |ctrl|
-        ctrl.editor; // open the plugin GUI (optional)
-        ("Loaded: " ++ ctrl.info.name).postln;
-
-        // Register with TidalVST so Tidal can address it as "myvst"
-        TidalVST.addVST(\myvst, ctrl);
-    });
-
-    "SuperDirt + TidalVST ready.".postln;
+    "SuperDirt ready.".postln;
 };
 )
 
-// --- Preset utilities (run interactively as needed) ---
+// --- 3. Load Surge XT via TidalVST (run after SuperDirt is ready) ---
+(
+SynthDef("SurgeXT", { |out, pan = 0|
+    var sound = In.ar(out, ~dirt.numChannels);
+    sound = VSTPlugin.ar(sound, ~dirt.numChannels, id: \surge);
+    Out.ar(out, DirtPan.ar(sound, ~dirt.numChannels, pan))
+}).add;
+)
 
-// Save current patch to file:
-// ~vst_ctrl.savePreset("/path/to/patches/mypatch.vstpreset");
+(
+var synths = Dictionary[\surge -> Synth("SurgeXT", [])];
+var instruments = Dictionary[
+    \surge -> VSTPluginController(synths.at(\surge), id: \surge)
+                  .open("Surge XT.vst3", editor: true, verbose: true)
+];
 
-// Load a patch from file:
-// ~vst_ctrl.loadPreset("/path/to/patches/mypatch.vstpreset");
+var triggerFunc = { |vstName|
+    var oldBusses = Set[];
+    var newBusses = Set[];
+    var busId;
+    var lag      = ~lag + (~latency ? 0);
+    var sustain  = ~sustain = ~sustain.value;
+    var note     = (~freq.value.cpsmidi).round(1).asInteger;
+    var velocity = (~amp.value * (~gain.min(2) + ~overgain).pow(4))
+                       .linlin(0, 1, 0, 127).asInteger;
+    var instrument = instruments[vstName];
 
-// Select a factory preset by index:
-// ~vst_ctrl.program_(0);
+    synths.at(vstName).set(\out, ~out, \pan, currentEnvironment.at(\pan));
 
-// List all factory preset names:
-// ~vst_ctrl.info.programs.do { |name, i| (i.asString ++ ": " ++ name).postln };
+    ~dirt.server.makeBundle(~latency, {
+        currentEnvironment.keysDo { |key|
+            if (key.asString.contains("varg"), {
+                busId = currentEnvironment.at(key);
+                if (busId.asString.contains("c"), {
+                    if (vstControlBusses.at(busId).isNil, {
+                        vstControlBusses.put(busId, Set[]);
+                    });
+                    vstControlBusses.at(busId).add(vstName);
+                    vstControlBus.put(currentEnvironment.at(key),
+                        key.asString.replace("varg", ""));
+                    newBusses.add(currentEnvironment.at(key));
+                }, {
+                    instrument.set(
+                        key.asString.replace("varg", "").asInteger,
+                        currentEnvironment.at(key));
+                });
+            });
+            vstControlBusses.keysDo { |bus|
+                if (vstControlBusses.at(bus).includes(vstName), {
+                    oldBusses.add(bus)
+                });
+            };
+        };
+        (newBusses -- oldBusses).do { |deleteBus|
+            vstControlBusses.at(deleteBus).remove(vstName);
+        };
+    });
 
-// Get/set a parameter by index:
-// ~vst_ctrl.get(0, { |val| val.postln });
-// ~vst_ctrl.set(0, 0.75);
+    thisThread.clock.sched(lag,           { instruments[vstName].midi.noteOn(0, note, velocity) });
+    thisThread.clock.sched(sustain + lag,  { instruments[vstName].midi.noteOff(0, note, velocity) });
+};
+
+var vstControlBus     = ();
+var vstControlBusses  = ();
+
+var serverMessage = { |synth|
+    [\out, ~out, \sustain, ~sustain].asControlInput.flop.do { |each|
+        ~dirt.server.sendMsg(\s_new, synth, -1, 1,
+            currentEnvironment.at(\synthGroup), *each.asOSCArgArray)
+    }
+};
+
+// Register "surge" as a sound source in Tidal
+~dirt.soundLibrary.addSynth(\surge, (playInside: {
+    triggerFunc.value(\surge);
+    serverMessage.value(\SurgeXT);
+}));
+
+~instruments = instruments;
+"Surge XT registered. Use  # s \"surge\"  in Tidal.".postln;
+)
+
+// --- Preset utilities ---
+// Save current patch:
+// ~instruments.at(\surge).savePreset("/path/to/patches/mypatch.vstpreset");
+
+// Load a patch:
+// ~instruments.at(\surge).loadPreset("/path/to/patches/mypatch.vstpreset");
+
+// Select factory preset by index:
+// ~instruments.at(\surge).program_(0);
+
+// List factory presets:
+// ~instruments.at(\surge).info.programs.do { |name, i| (i.asString ++ ": " ++ name).postln };
+
+// Open Surge XT GUI:
+// ~instruments.at(\surge).editor;

@@ -72,14 +72,33 @@ To open the Surge XT GUI, uncomment and evaluate:
 ~instruments.at(\surge).editor;
 ```
 
+## VS Code setup
+
+Install the TidalCycles extension:
+
+```bash
+code --install-extension tidalcycles.vscode-tidalcycles
+```
+
+In Settings (Ctrl+,), set:
+- `tidalcycles.bootTidalPath` → `/home/dan/sandbox/dnewcome/algo-music/BootTidal.hs`
+- `tidalcycles.ghciPath` → `/home/dan/.ghcup/bin/ghci`
+
+There is no explicit "Start Tidal" command — Tidal boots automatically the first time you evaluate a line in a `.tidal` file (**Shift+Enter**).
+
+Check **View > Output > TidalCycles** for boot status. You should see:
+```
+[TidalCycles version 1.10.1]
+Connected to SuperDirt
+```
+
 ## Every session
 
 ```
-1. Start JACK (qjackctl or jackd)
-2. Open scide
-3. Open boot.scd → evaluate blocks 2, 3, 4
-4. Open your Tidal editor → point it at BootTidal.hs in this directory
-5. Open start.tidal and start evaluating patterns
+1. Start JACK if not already running (qjackctl or jackd)
+2. Open scide → open boot.scd → evaluate blocks 2, 3, 4
+   Wait for "Surge XT registered." in the post window
+3. Open start.tidal in VS Code → evaluate any line to boot Tidal
 ```
 
 ## Tidal patterns

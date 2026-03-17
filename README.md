@@ -19,11 +19,21 @@ Run the setup script (Ubuntu only, tested on 25.10):
 ```
 
 This installs:
-1. SuperCollider + JACK
+1. SuperCollider + sc3-plugins + pipewire-jack
 2. GHC + Cabal via ghcup
 3. TidalCycles
 4. Surge XT 1.3.4 (from official .deb)
 5. VSTPlugin 0.6.2 (built from source — no prebuilt binaries exist)
+
+### Real-time audio priority (do once)
+
+Allow SC to request real-time scheduling — without this you may get audio glitches:
+
+```bash
+sudo usermod -a -G audio $USER
+```
+
+Log out and back in for the change to take effect.
 
 ### VSTPlugin build notes
 
@@ -40,65 +50,40 @@ for a VST2 plugin and refuses to load it.
 
 ## First-time SuperCollider setup
 
-Open `scide`, then open `boot.scd` and evaluate the blocks in order:
+Open `boot.scd` and evaluate the commented-out quark install block once:
 
-### Block 1 — Install Quarks (once only)
-
-Installs SuperDirt, Vowel, and TidalVST quarks, then recompiles SC.
-After recompile, skip this block on future sessions.
-
-### Block 2 — Boot SuperDirt
-
-Starts the SC audio server and SuperDirt. Wait for:
-```
-SuperDirt ready.
-```
-in the post window before continuing.
-
-### Block 3 — Define SynthDef
-
-Defines the `SurgeXT` SynthDef that wraps VSTPlugin. Must be re-evaluated
-each session after booting.
-
-### Block 4 — Load Surge XT
-
-Opens Surge XT, registers it with SuperDirt as `\surge`, and exposes
-`~instruments` for preset management. Wait for:
-```
-Surge XT registered. Use  # s "surge"  in Tidal.
-```
-To open the Surge XT GUI, uncomment and evaluate:
 ```supercollider
-~instruments.at(\surge).editor;
+Quarks.checkForUpdates({
+    Quarks.install("SuperDirt", "v1.7.3");
+    ...
+});
 ```
+
+SC will recompile. After that, skip this block — quarks persist across sessions.
 
 ## VS Code setup
 
-Install the TidalCycles extension:
+Install the SuperCollider extension by `scztt` from the VS Code marketplace,
+and the TidalCycles extension:
 
 ```bash
 code --install-extension tidalcycles.vscode-tidalcycles
 ```
 
 In Settings (Ctrl+,), set:
-- `tidalcycles.bootTidalPath` → `/home/dan/sandbox/dnewcome/algo-music/BootTidal.hs`
+- `tidalcycles.bootTidalPath` → path to `BootTidal.hs` in this repo
 - `tidalcycles.ghciPath` → `/home/dan/.ghcup/bin/ghci`
-
-There is no explicit "Start Tidal" command — Tidal boots automatically the first time you evaluate a line in a `.tidal` file (**Shift+Enter**).
-
-Check **View > Output > TidalCycles** for boot status. You should see:
-```
-[TidalCycles version 1.10.1]
-Connected to SuperDirt
-```
 
 ## Every session
 
+```bash
+./run.sh
 ```
-1. Start JACK if not already running (qjackctl or jackd)
-2. Open scide → open boot.scd → evaluate blocks 2, 3, 4
-   Wait for "Surge XT registered." in the post window
-3. Open start.tidal in VS Code → evaluate any line to boot Tidal
+
+This starts `sclang` with `boot.scd` via PipeWire and opens VS Code.
+Watch the SC output panel for:
+```
+Boot complete. Open song.scd to play.
 ```
 
 ## Tidal patterns

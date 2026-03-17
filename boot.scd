@@ -5,16 +5,16 @@
 // First-time quark install: evaluate the block below ONCE, then remove it
 // (or leave it — Quarks.install is idempotent).
 //
-// --- FIRST TIME ONLY: Install quarks ---
-// (
-// Quarks.checkForUpdates({
-//     Quarks.install("SuperDirt", "v1.7.3");
-//     Quarks.install("Dirt-Samples");
-//     Quarks.install("Vowel");
-//     Quarks.install("https://github.com/thgrund/TidalVST");
-//     thisProcess.recompile();
-// });
-// )
+// --- FIRST TIME ONLY: Install quarks (comment out after first run) ---
+(
+Quarks.checkForUpdates({
+    Quarks.install("SuperDirt", "v1.7.3");
+    Quarks.install("Dirt-Samples");
+    Quarks.install("Vowel");
+    Quarks.install("https://github.com/thgrund/TidalVST");
+    thisProcess.recompile();
+});
+)
 // sc3-plugins: sudo apt install sc3-plugins
 
 (

@@ -1,0 +1,75 @@
+// song.strudel
+// Paste into strudel.cc and hit Ctrl+Enter.
+// Edit cycle counts in arrange() to change section lengths, then re-evaluate.
+// Note: melodic parts use built-in Strudel synths (no VST in browser).
+
+// ============================================================
+// TEMPO
+// ============================================================
+
+setcpm(130/4) // 130 bpm, 1 cycle = 1 bar
+
+
+// ============================================================
+// COMPONENTS
+// ============================================================
+
+const kick  = s("bd*4")
+const kick2 = s("bd").struct("t(3,8)")
+const snare = s("~ sd ~ sd")
+const sn2   = s("~ ~ sd ~")
+const ht    = s("hh*8")
+const ht2   = s("hh").struct("t(5,8)")
+const oh    = s("~ ~ ~ oh")
+const perc  = s("cp").struct("t(3,8)")
+const perc2 = s("~ cp ~ ~")
+
+const bass  = n("0 ~ 7 ~ 5 ~ 3 ~").scale("C:minor")
+              .s("sawtooth").sustain(0.3).lpf(900).gain(0.8)
+const bass2 = n("0 ~ ~ 7 5 ~ 3 ~").scale("C:minor")
+              .s("sawtooth").sustain(0.4).lpf(900).gain(0.8)
+
+const lead  = n("[0,4,7] ~ [5,9,12] ~").scale("C:minor")
+              .s("sawtooth").sustain(1.2).gain(0.7)
+const lead2 = n("0 4 7").scale("C:dorian").struct("t(3,8)")
+              .s("sawtooth").sustain(0.2).gain(0.7)
+
+const pad   = n("0").scale("C:minor")
+              .s("superpad").sustain(8).gain(0.45).slow(2)
+const riser = n("0").scale("C:minor")
+              .s("supersaw").sustain(16).gain(0.5)
+              .lpf(sine.slow(8).range(200, 4000))
+
+
+// ============================================================
+// SONG ARRANGEMENT
+// Each row: [cycles, pattern]   (cycles = bars at 4/4)
+// ============================================================
+
+$: arrange(
+  // --- INTRO (16 bars) ---
+  [4,  stack(kick)],
+  [4,  stack(kick, ht)],
+  [8,  stack(kick, ht, perc)],
+
+  // --- VERSE / BODY (32 bars) ---
+  [16, stack(kick, sn2, ht, perc, bass)],
+  [16, stack(kick, sn2, ht, perc, bass, lead)],
+
+  // --- BREAKDOWN (16 bars) ---
+  [16, stack(pad)],
+
+  // --- BUILD-UP (8 bars) ---
+  [8,  stack(ht2.fast(2), perc.fast(2), pad, riser)],
+
+  // --- DROP / MAIN SECTION (32 bars) ---
+  [32, stack(kick, snare, ht, oh, bass, lead, perc2)],
+
+  // --- BRIDGE / DROP 2 (32 bars) ---
+  [32, stack(kick, snare, ht2, oh, bass2, lead2, perc2)],
+
+  // --- OUTRO (16 bars) ---
+  [8,  stack(kick, sn2, ht, perc)],
+  [4,  stack(kick, ht)],
+  [4,  stack(kick)]
+)

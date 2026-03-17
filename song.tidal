@@ -1,0 +1,174 @@
+-- song.tidal
+-- Live performance song structure.
+-- Evaluate a scene block to switch sections.
+-- Use xfadeIn for smooth transitions on melodic channels.
+
+-- ============================================================
+-- COMPONENTS
+-- ============================================================
+
+:{
+let kick      = s "bd*4"
+    kick2     = s "bd(3,8)"
+    snare     = s "~ sd ~ sd"
+    snare2    = s "~ ~ sd ~"
+    ht        = s "hh*8"
+    ht2       = s "hh(5,8)"
+    oh        = s "~ ~ ~ oh"
+    perc      = s "cp(3,8)"
+    perc2     = s "~ cp ~ ~"
+
+    bass      = n (scale "minor" "0 ~ 7 ~ 5 ~ 3 ~") # s "surge" # sustain 0.3
+    bass2     = n (scale "minor" "0 ~ ~ 7 5 ~ 3 ~") # s "surge" # sustain 0.4
+
+    lead      = n "[0,4,7] ~ [5,9,12] ~" # s "surge" # sustain 1.2 # gain 0.8
+    lead2     = n (scale "dorian" (struct "t(3,8)" "0 4 7")) # s "surge" # sustain 0.2
+
+    pad       = n "0*1" # s "surge" # sustain 8 # gain 0.5 # legato 1
+    riser     = n "0" # s "surge" # sustain 16 # gain 0.6
+               # varg1 (slow 8 $ range 0.0 1.0 sine)
+:}
+
+
+-- ============================================================
+-- SILENCE (panic)
+-- ============================================================
+
+hush
+
+
+-- ============================================================
+-- INTRO  (16–64 bars)
+-- Steady kick only. Layer in hats and perc by re-evaluating.
+-- ============================================================
+
+-- Step 1: kick alone
+do
+  d1 $ kick
+  d2 $ silence
+  d3 $ silence
+  d4 $ silence
+  d5 $ silence
+  d6 $ silence
+  d7 $ silence
+  d8 $ silence
+
+-- Step 2: add hats
+do
+  d1 $ kick
+  d2 $ ht
+  d3 $ silence
+  d4 $ silence
+  d5 $ silence
+
+-- Step 3: add perc
+do
+  d1 $ kick
+  d2 $ ht
+  d3 $ perc
+  d4 $ silence
+  d5 $ silence
+
+
+-- ============================================================
+-- VERSE / BODY  (32–64 bars)
+-- Full groove. Bass and lead enter.
+-- ============================================================
+
+do
+  d1 $ kick |+ snare2
+  d2 $ ht
+  d3 $ perc
+  d4 $ bass
+  d5 $ silence
+  d6 $ silence
+
+-- add lead:
+xfadeIn 5 4 $ lead
+
+
+-- ============================================================
+-- BREAKDOWN  (16–32 bars)
+-- Kick and drums drop. Pad sustains.
+-- ============================================================
+
+do
+  d1 $ silence
+  d2 $ silence
+  d3 $ silence
+  d4 $ pad
+  d5 $ silence
+  d6 $ silence
+
+
+-- ============================================================
+-- BUILD-UP  (8–16 bars)
+-- Energy rises. Drums accelerate, riser enters.
+-- ============================================================
+
+do
+  d1 $ silence
+  d2 $ fast 2 ht2
+  d3 $ fast 2 perc
+  d4 $ pad
+  d5 $ riser
+  d6 $ silence
+
+
+-- ============================================================
+-- DROP / MAIN SECTION  (32–64 bars)
+-- Full energy. Everything in.
+-- ============================================================
+
+do
+  d1 $ kick |+ snare
+  d2 $ ht
+  d3 $ oh
+  d4 $ bass
+  d5 $ lead
+  d6 $ perc2
+
+
+-- ============================================================
+-- BRIDGE / DROP 2
+-- Variation: swap bass and lead for alternates.
+-- ============================================================
+
+do
+  d1 $ kick |+ snare
+  d2 $ ht2
+  d3 $ oh
+  d4 $ bass2
+  d5 $ lead2
+  d6 $ perc2
+
+
+-- ============================================================
+-- OUTRO  (16–64 bars)
+-- Mirror the intro. Strip elements back down.
+-- ============================================================
+
+-- Step 1: drop lead and bass
+do
+  d1 $ kick |+ snare2
+  d2 $ ht
+  d3 $ perc
+  d4 $ silence
+  d5 $ silence
+  d6 $ silence
+
+-- Step 2: drop snare and perc
+do
+  d1 $ kick
+  d2 $ ht
+  d3 $ silence
+  d4 $ silence
+  d5 $ silence
+
+-- Step 3: kick alone, ready for DJ mix out
+do
+  d1 $ kick
+  d2 $ silence
+  d3 $ silence
+  d4 $ silence
+  d5 $ silence

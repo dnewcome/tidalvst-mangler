@@ -3,7 +3,7 @@ set -e
 
 echo "==> Installing SuperCollider..."
 sudo apt update
-sudo apt install -y supercollider supercollider-ide supercollider-server supercollider-language sc3-plugins jackd2 qjackctl
+sudo apt install -y supercollider supercollider-ide supercollider-server supercollider-language sc3-plugins pipewire-jack
 
 echo "==> Installing ghcup dependencies..."
 sudo apt install -y curl build-essential libgmp-dev libffi-dev libncurses-dev
@@ -77,7 +77,7 @@ echo "VSTPlugin installed to $SC_EXT_DIR"
 echo ""
 echo "Done. Next steps:"
 echo ""
-echo "1. Open SuperCollider IDE: scide"
+echo "1. Open SuperCollider IDE via PipeWire: pw-jack scide"
 echo "   - Open boot.scd, update the VST plugin path, then Ctrl+Shift+Enter to evaluate"
 echo "   - Run VSTPlugin.search(s) in SC to list available plugins on your system"
 echo ""

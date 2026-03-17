@@ -3,7 +3,7 @@ set -e
 
 echo "==> Installing SuperCollider..."
 sudo apt update
-sudo apt install -y supercollider supercollider-ide supercollider-server supercollider-language jackd2 qjackctl
+sudo apt install -y supercollider supercollider-ide supercollider-server supercollider-language sc3-plugins jackd2 qjackctl
 
 echo "==> Installing ghcup dependencies..."
 sudo apt install -y curl build-essential libgmp-dev libffi-dev libncurses-dev

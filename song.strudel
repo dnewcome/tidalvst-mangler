@@ -35,7 +35,8 @@ const lead2 = n("0 4 7").scale("C:dorian").struct("t(3,8)")
               .s("sawtooth").sustain(0.2).gain(0.7)
 
 const pad   = n("0").scale("C:minor")
-              .s("superpad").sustain(8).gain(0.45).slow(2)
+              .s("sawtooth").sustain(6).attack(2).release(3)
+              .lpf(600).gain(0.4).slow(2)
 const riser = n("0").scale("C:minor")
               .s("supersaw").sustain(16).gain(0.5)
               .lpf(sine.slow(8).range(200, 4000))
@@ -48,28 +49,28 @@ const riser = n("0").scale("C:minor")
 
 $: arrange(
   // --- INTRO (16 bars) ---
-  [4,  stack(kick)],
-  [4,  stack(kick, ht)],
-  [8,  stack(kick, ht, perc)],
+  [4,  stack(kick,                          pure("INTRO 1: kick").log())],
+  [4,  stack(kick, ht,                      pure("INTRO 2: hats").log())],
+  [8,  stack(kick, ht, perc,               pure("INTRO 3: perc").log())],
 
   // --- VERSE / BODY (32 bars) ---
-  [16, stack(kick, sn2, ht, perc, bass)],
-  [16, stack(kick, sn2, ht, perc, bass, lead)],
+  [16, stack(kick, sn2, ht, perc, bass,    pure("VERSE 1: bass").log())],
+  [16, stack(kick, sn2, ht, perc, bass, lead, pure("VERSE 2: lead").log())],
 
   // --- BREAKDOWN (16 bars) ---
-  [16, stack(pad)],
+  [16, stack(pad,                           pure("BREAKDOWN").log())],
 
   // --- BUILD-UP (8 bars) ---
-  [8,  stack(ht2.fast(2), perc.fast(2), pad, riser)],
+  [8,  stack(ht2.fast(2), perc.fast(2), pad, riser, pure("BUILD-UP").log())],
 
   // --- DROP / MAIN SECTION (32 bars) ---
-  [32, stack(kick, snare, ht, oh, bass, lead, perc2)],
+  [32, stack(kick, snare, ht, oh, bass, lead, perc2, pure("DROP").log())],
 
   // --- BRIDGE / DROP 2 (32 bars) ---
-  [32, stack(kick, snare, ht2, oh, bass2, lead2, perc2)],
+  [32, stack(kick, snare, ht2, oh, bass2, lead2, perc2, pure("BRIDGE").log())],
 
   // --- OUTRO (16 bars) ---
-  [8,  stack(kick, sn2, ht, perc)],
-  [4,  stack(kick, ht)],
-  [4,  stack(kick)]
+  [8,  stack(kick, sn2, ht, perc,          pure("OUTRO 1: drop lead/bass").log())],
+  [4,  stack(kick, ht,                     pure("OUTRO 2: drop perc").log())],
+  [4,  stack(kick,                         pure("OUTRO 3: kick alone").log())]
 )

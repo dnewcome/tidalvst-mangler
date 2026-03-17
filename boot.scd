@@ -5,10 +5,15 @@
 (
 Quarks.checkForUpdates({
     Quarks.install("SuperDirt", "v1.7.3");
+    Quarks.install("Dirt-Samples");
     Quarks.install("Vowel");
     Quarks.install("https://github.com/thgrund/TidalVST");
     thisProcess.recompile();
 });
+// Note: sc3-plugins must be installed separately at the OS level.
+// Ubuntu/Debian: sudo apt install sc3-plugins
+// macOS:         brew install --cask sc3-plugins
+// Or download from: https://github.com/supercollider/sc3-plugins/releases
 )
 
 // --- 2. Boot server + SuperDirt ---
